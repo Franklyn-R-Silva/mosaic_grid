@@ -1,0 +1,38 @@
+name: mosaic_grid
+description: >-
+  Lazy grids whose tiles size themselves: aligned rows that grow to their
+  tallest card, masonry columns, multi-column tiles, paging and jump-to-item.
+version: 0.1.0
+homepage: https://devfrs.com
+repository: https://github.com/Franklyn-R-Silva/mosaic_grid
+issue_tracker: https://github.com/Franklyn-R-Silva/mosaic_grid/issues
+screenshots:
+  - description: A catalog in aligned rows, a masonry board and the playground.
+    path: screenshots/hero.png
+  - description: A fixed-ratio GridView next to MosaicGrid with the same cards.
+    path: screenshots/gridview-vs-mosaicgrid.png
+  - description: Paging through a product catalog and jumping to an item.
+    path: screenshots/catalog.gif
+  - description: Columns follow the space the grid is given, rows stay aligned.
+    path: screenshots/adaptive.gif
+topics:
+  - grid
+  - masonry
+  - layout
+  - sliver
+  - widget
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:

@@ -1,0 +1,65 @@
+name: Release
+
+# Creates a GitHub Release automatically when a version tag (e.g. v0.1.0) is
+# pushed. The release notes come from the matching section of CHANGELOG.md,
+# plus GitHub's auto-generated commit/PR summary.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Verify tag matches pubspec version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          echo "tag=$tag pubspec=$pubspec"
+          if [ "$tag" != "$pubspec" ]; then
+            echo "::error::Tag ($tag) does not match pubspec version ($pubspec)"
+            exit 1
+          fi
+
+      - name: Extract changelog section
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## " v "([^0-9].*)?$" {flag=1; next}
+            /^## / {flag=0}
+            flag {print}
+          ' CHANGELOG.md > RELEASE_NOTES.md
+          echo "----- release notes -----"
+          cat RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: true
+          draft: false
+          prerelease: false

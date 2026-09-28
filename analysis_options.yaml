@@ -1,0 +1,24 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # Checked in deliberately: `flutter pub get` (SDK 3.47+) writes this block
+  # itself, which left the working tree dirty in CI and failed the publish
+  # dry-run. Keeping it here makes that write a no-op.
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    - public_member_api_docs
+    - prefer_const_constructors
+    - prefer_final_locals
+    - require_trailing_commas

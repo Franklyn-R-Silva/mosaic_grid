@@ -1,0 +1,22 @@
+name: mosaic_grid_example
+description: A gallery of the mosaic_grid package — catalog, masonry board and playground.
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mosaic_grid:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

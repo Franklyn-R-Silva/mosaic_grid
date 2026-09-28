@@ -1,0 +1,7 @@
+# Normalize line endings to LF so `dart format` checks pass on any platform.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.mp4 binary
