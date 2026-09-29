@@ -13,8 +13,8 @@ import 'sliver_mosaic_grid.dart';
 ///
 /// * a [header] and a [footer], full width, scrolling with the tiles — the
 ///   footer is the natural home for a "loading more" or "try again" row;
-/// * [onEndReached], called once the user scrolls within
-///   [endReachedThreshold] of the end, at most once per [itemCount];
+/// * [onEndReached], called when the view comes within [endReachedThreshold]
+///   of the end — once per approach, not on every frame;
 /// * a [controller] to jump or animate to any item by index.
 ///
 /// {@tool snippet}
@@ -55,6 +55,7 @@ class MosaicGrid extends StatefulWidget {
     this.footer,
     this.onEndReached,
     this.endReachedThreshold = 400.0,
+    this.endReachedKey,
     this.controller,
     this.scrollController,
     this.scrollDirection = Axis.vertical,
@@ -94,6 +95,7 @@ class MosaicGrid extends StatefulWidget {
     this.footer,
     this.onEndReached,
     this.endReachedThreshold = 400.0,
+    this.endReachedKey,
     this.controller,
     this.findItemIndexCallback,
     this.scrollController,
@@ -139,16 +141,31 @@ class MosaicGrid extends StatefulWidget {
   /// A full-width widget after the tiles, scrolling with them.
   final Widget? footer;
 
-  /// Called when the user scrolls within [endReachedThreshold] of the end.
+  /// Called when the view comes within [endReachedThreshold] of the end.
   ///
-  /// Fires at most once for each value of [itemCount], so it does not repeat
-  /// while a page is loading; once the new items arrive and [itemCount]
-  /// changes, it can fire again. It never fires while the grid is empty — the
+  /// That covers scrolling there, a first page too short to fill the view,
+  /// and a new page that still does not fill it.
+  ///
+  /// It does not repeat while the view stays near the end with the same
+  /// [itemCount], so a page that is loading — or that failed — is not asked
+  /// for again on every frame. It fires again once [itemCount] changes, once
+  /// the view scrolls away from the end and comes back, or once
+  /// [endReachedKey] changes. It never fires while the grid is empty — the
   /// first page is the app's to load.
   final VoidCallback? onEndReached;
 
   /// How close to the end, in logical pixels, [onEndReached] fires.
   final double endReachedThreshold;
+
+  /// What the items were loaded for — a search term, a filter, a request
+  /// generation. When it changes, the grid forgets that [onEndReached] already
+  /// fired and checks the end again.
+  ///
+  /// Only needed when the app can replace the list with another one of the
+  /// same length while the view stays at the end: a new search whose first
+  /// page has as many items as the old list. Without a scroll or a change of
+  /// [itemCount], nothing else tells the grid that the list is a new one.
+  final Object? endReachedKey;
 
   /// Scrolls the grid to a given item. See [MosaicController].
   final MosaicController? controller;
@@ -209,30 +226,75 @@ class MosaicGrid extends StatefulWidget {
 }
 
 class _MosaicGridState extends State<MosaicGrid> {
-  // The item count at which onEndReached last fired.
+  // The item count at which onEndReached last fired, or null while it may
+  // fire: it never did, or the view has left the end since.
   int? _endReachedAt;
 
+  // The grid's own Scrollable, to read the live scroll position.
+  ScrollableState? _scrollable;
+
+  bool _endCheckScheduled = false;
+
+  @override
+  void didUpdateWidget(MosaicGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newList = widget.endReachedKey != oldWidget.endReachedKey;
+    if (newList) {
+      _endReachedAt = null;
+    }
+    if (widget.onEndReached != null &&
+        (newList || widget.itemCount != oldWidget.itemCount)) {
+      _scheduleEndCheck();
+    }
+  }
+
+  // A new page that still fits in the view changes no scroll metric, so no
+  // notification reports it. Look at the live position instead, once the new
+  // items are laid out — not at the last metrics seen, which are stale if the
+  // new page made the grid scrollable.
+  void _scheduleEndCheck() {
+    if (_endCheckScheduled) {
+      return;
+    }
+    _endCheckScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _endCheckScheduled = false;
+      final position = _scrollable?.position;
+      if (mounted && position != null) {
+        _checkEnd(position);
+      }
+    });
+  }
+
   bool _handleNotification(Notification notification) {
-    final ScrollMetrics metrics;
     if (notification is ScrollUpdateNotification && notification.depth == 0) {
-      metrics = notification.metrics;
+      _checkEnd(notification.metrics);
     } else if (notification is ScrollMetricsNotification &&
         notification.depth == 0) {
-      metrics = notification.metrics;
-    } else {
-      return false;
+      _checkEnd(notification.metrics);
+    }
+    return false;
+  }
+
+  void _checkEnd(ScrollMetrics metrics) {
+    if (!metrics.hasContentDimensions || !metrics.hasPixels) {
+      return;
+    }
+    if (metrics.extentAfter > widget.endReachedThreshold) {
+      // Away from the end: the next approach may ask again, even with the
+      // same item count — the list may have been replaced by another one of
+      // the same length, such as the first page of a new search.
+      _endReachedAt = null;
+      return;
     }
     final onEndReached = widget.onEndReached;
     if (onEndReached == null ||
         widget.itemCount == 0 ||
         _endReachedAt == widget.itemCount) {
-      return false;
+      return;
     }
-    if (metrics.extentAfter <= widget.endReachedThreshold) {
-      _endReachedAt = widget.itemCount;
-      onEndReached();
-    }
-    return false;
+    _endReachedAt = widget.itemCount;
+    onEndReached();
   }
 
   @override
@@ -299,7 +361,14 @@ class _MosaicGridState extends State<MosaicGrid> {
         keyboardDismissBehavior: widget.keyboardDismissBehavior,
         restorationId: widget.restorationId,
         clipBehavior: widget.clipBehavior,
-        slivers: <Widget>[sliver],
+        slivers: <Widget>[
+          Builder(
+            builder: (BuildContext context) {
+              _scrollable = Scrollable.maybeOf(context);
+              return sliver;
+            },
+          ),
+        ],
       ),
     );
   }

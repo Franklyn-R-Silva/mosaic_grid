@@ -613,6 +613,129 @@ void main() {
       expect(calls, 1);
     });
 
+    testWidgets('fires again when a new page still does not fill the view', (
+      tester,
+    ) async {
+      var calls = 0;
+      Future<void> pumpCount(int count) => tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            onEndReached: () => calls += 1,
+            itemCount: count,
+            itemBuilder: (_, i) => box(i, 100),
+          ),
+        ),
+      );
+      await pumpCount(2); // one row, 100 px in a 600 px viewport
+      await tester.pump();
+      expect(calls, 1);
+
+      // Two rows: still nothing to scroll, so no scroll metric changes.
+      await pumpCount(3);
+      await tester.pump();
+      expect(calls, 2);
+    });
+
+    testWidgets('a new page that fills the view waits for the end', (
+      tester,
+    ) async {
+      var calls = 0;
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      Future<void> pumpCount(int count) => tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            scrollController: controller,
+            endReachedThreshold: 100,
+            onEndReached: () => calls += 1,
+            itemCount: count,
+            itemBuilder: (_, i) => box(i, 100),
+          ),
+        ),
+      );
+      await pumpCount(2);
+      await tester.pump();
+      expect(calls, 1);
+
+      await pumpCount(20); // 1000 px: now there is somewhere to scroll
+      await tester.pump();
+      expect(calls, 1);
+
+      controller.jumpTo(controller.position.maxScrollExtent);
+      await tester.pump();
+      expect(calls, 2);
+    });
+
+    testWidgets('scrolling away from the end re-arms it for the same count', (
+      tester,
+    ) async {
+      var calls = 0;
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      Future<void> pumpList(String name) => tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            scrollController: controller,
+            endReachedThreshold: 100,
+            onEndReached: () => calls += 1,
+            itemCount: 20,
+            itemBuilder: (_, i) =>
+                SizedBox(key: ValueKey('$name $i'), height: 100),
+          ),
+        ),
+      );
+      await pumpList('first search');
+      await tester.pump();
+      controller.jumpTo(controller.position.maxScrollExtent);
+      await tester.pump();
+      expect(calls, 1);
+
+      // A new search whose first page has as many items as the old list.
+      await pumpList('second search');
+      controller.jumpTo(0);
+      await tester.pump();
+      controller.jumpTo(controller.position.maxScrollExtent);
+      await tester.pump();
+      expect(calls, 2);
+    });
+
+    testWidgets('a new endReachedKey checks the end again', (tester) async {
+      var calls = 0;
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      Future<void> pumpList(String search) => tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            scrollController: controller,
+            endReachedThreshold: 100,
+            endReachedKey: search,
+            onEndReached: () => calls += 1,
+            itemCount: 20,
+            itemBuilder: (_, i) =>
+                SizedBox(key: ValueKey('$search $i'), height: 100),
+          ),
+        ),
+      );
+      await pumpList('first search');
+      await tester.pump();
+      controller.jumpTo(controller.position.maxScrollExtent);
+      await tester.pump();
+      expect(calls, 1);
+
+      // Replaced in place: same length, and the view never leaves the end.
+      await pumpList('second search');
+      await tester.pump();
+      expect(calls, 2);
+
+      await pumpList('second search');
+      await tester.pump();
+      expect(calls, 2, reason: 'the same key does not ask twice');
+    });
+
     testWidgets('children constructor', (tester) async {
       await tester.pumpWidget(
         harness(
