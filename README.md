@@ -52,8 +52,9 @@ There is nothing to tune and nothing to cut off.
   so it works in split panes and resizable windows.
 - **Jump to any item** — `MosaicController.jumpToIndex` / `animateToIndex`,
   exact even for items that were never on screen.
-- **Paging built in** — `header`, `footer` and `onEndReached`, which fires once
-  per page.
+- **Paging built in** — `header`, `footer` and `onEndReached`, which asks for
+  the next page once per approach to the end — also when a page is too short
+  to fill the view.
 - **Stable scrolling** — positions are recorded exactly, so scrolling back up
   never jumps; a tile above the viewport that changes size does not move what
   you are looking at.
@@ -219,13 +220,37 @@ MosaicGrid.builder(
 
 - `header` and `footer` are full-width widgets that scroll with the tiles. The
   footer is the natural place for "loading more", "try again" or "that's all".
-- `onEndReached` fires when the user scrolls within `endReachedThreshold` of
-  the end — or right away, if the first page does not fill the viewport.
-- It fires **at most once per `itemCount`**: no duplicate calls while a page
-  is loading. When the new items arrive, `itemCount` changes and it can fire
-  again. It never fires while the grid is empty; loading the first page is up
-  to you.
-- To retry after a failed load, call your loader from the footer's button.
+- `onEndReached` fires when the view comes within `endReachedThreshold` of the
+  end: when the user scrolls there, or right away when a page — the first or
+  any later one — is too short to fill the viewport.
+- It does **not repeat while the view stays near the end with the same
+  `itemCount`**: no duplicate calls while a page is loading, and no retry loop
+  after a failed one. It fires again when `itemCount` changes, or when the user
+  scrolls away from the end and comes back. It never fires while the grid is
+  empty; loading the first page is up to you.
+- To retry after a failed load, call your loader from the footer's button —
+  or let the user scroll back to the end.
+
+### Replacing the list
+
+A new search or a new filter replaces the items instead of adding to them. If
+the view is scrolled, it usually jumps back to the top and `onEndReached`
+re-arms on its own. But a list replaced *in place*, with the same length and
+the view still at the end — the first page of a new search, as long as the old
+list was — looks exactly like the old one to the grid. Tell it what the items
+were loaded for:
+
+```dart
+MosaicGrid.builder(
+  itemCount: results.length,
+  itemBuilder: (context, i) => ResultCard(results[i]),
+  onEndReached: loadNextPage,
+  endReachedKey: query, // a new query is a new list
+)
+```
+
+When `endReachedKey` changes, the grid forgets that it already asked and checks
+the end again.
 
 ## Jumping to an item
 
@@ -294,8 +319,9 @@ child is kept in memory).
 | `columnSpan` | `int Function(int index)?` | `null` (1 each) | Columns each item spans. |
 | `header` | `Widget?` | `null` | Full-width widget before the tiles. |
 | `footer` | `Widget?` | `null` | Full-width widget after the tiles. |
-| `onEndReached` | `VoidCallback?` | `null` | Called near the end, once per `itemCount`. |
+| `onEndReached` | `VoidCallback?` | `null` | Called when the view comes near the end, once per approach. See [Paging](#paging-header-and-footer). |
 | `endReachedThreshold` | `double` | `400` | Distance from the end that triggers `onEndReached`. |
+| `endReachedKey` | `Object?` | `null` | What the items were loaded for; a new value re-arms `onEndReached`. See [Replacing the list](#replacing-the-list). |
 | `controller` | `MosaicController?` | `null` | Jump or animate to an item. |
 | `findItemIndexCallback` | `ChildIndexGetter?` | `null` | Keeps tile state when items are reordered (by key). |
 | `scrollController` | `ScrollController?` | `null` | The scroll position. |

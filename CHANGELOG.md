@@ -2,6 +2,26 @@
 
 <!-- Add upcoming changes under a new "## Unreleased" heading. -->
 
+## 0.1.1
+
+### Fixes
+
+- `onEndReached` fires again when a new page arrives and still does not fill
+  the viewport. Only the first page was checked: with nothing to scroll, no
+  scroll metric changed, no notification came, and the page after it was
+  never asked for.
+- `onEndReached` no longer stays silent after the list is replaced by another
+  one of the same length, such as the first page of a new search. It fired at
+  most once per `itemCount` and never re-armed; now scrolling away from the end
+  and back re-arms it.
+
+### Added
+
+- `MosaicGrid.endReachedKey` — what the items were loaded for (a search term, a
+  filter). When it changes, the grid forgets that `onEndReached` already fired
+  and checks the end again: the fix for a list replaced in place while the view
+  stays at the end, which no scroll or change of `itemCount` reveals.
+
 ## 0.1.0
 
 First release.
