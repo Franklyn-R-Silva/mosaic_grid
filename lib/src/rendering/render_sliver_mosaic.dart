@@ -326,6 +326,9 @@ class RenderSliverMosaic extends RenderSliverMultiBoxAdaptor {
         columnCount: columnCount,
         rowGap: _rowGap,
       );
+      if (previous != null) {
+        _replay(previous, ledger);
+      }
       if (anchor != null) {
         _fill(ledger, start, end, mustCommit: anchor.index);
         final correction = _anchorCorrection(ledger, anchor);
@@ -427,6 +430,19 @@ class RenderSliverMosaic extends RenderSliverMultiBoxAdaptor {
       childManager.setDidUnderflow(true);
     }
     childManager.didFinishLayout();
+  }
+
+  // Places the items [previous] had measured into [ledger] from the extents it
+  // recorded, without building them again: measuring a deep list anew would
+  // freeze the frame in which the column count changed. A new row gap or
+  // layout keeps every extent exact. New column widths make them those of the
+  // old width until each tile is measured again, as it comes into view —
+  // [_place] notices the difference, and the anchor keeps the view still.
+  void _replay(MosaicLedger previous, MosaicLedger ledger) {
+    final count = math.min(previous.measuredCount, _count);
+    for (var i = 0; i < count; i++) {
+      ledger.add(_spanOf(i), previous.naturalExtent(i));
+    }
   }
 
   // Extrapolates the extent of the whole grid from the items placed so far.

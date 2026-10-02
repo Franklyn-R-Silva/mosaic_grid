@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -163,6 +164,10 @@ class _SliverMosaicGridState extends State<SliverMosaicGrid> {
         return;
       }
       final position = scrollable.position;
+      if (attempt > 0 && position.userScrollDirection != ScrollDirection.idle) {
+        // The user is dragging or flinging: the scroll view is theirs now.
+        return;
+      }
       final target =
           (location.scrollOffset -
                   alignment * (position.viewportDimension - location.extent))
@@ -172,6 +177,14 @@ class _SliverMosaicGridState extends State<SliverMosaicGrid> {
       }
       if (duration != null && attempt == 0) {
         await position.animateTo(target, duration: duration, curve: curve);
+        if (!mounted) {
+          return;
+        }
+        if ((position.pixels - target).abs() >= 0.5 && !position.atEdge) {
+          // Stopped short of the target, away from the edges: a touch or a
+          // wheel interrupted it. Do not pull the view back.
+          return;
+        }
       } else {
         position.jumpTo(target);
       }
@@ -231,26 +244,35 @@ class _SliverMosaicGridState extends State<SliverMosaicGrid> {
 ///
 /// Give it to a `SliverMosaicGrid` or `MosaicGrid`, then call [jumpToIndex] or
 /// [animateToIndex]. The grid measures every item up to the target first, so
-/// the item lands exactly where asked even if it was never on screen. A
-/// controller drives one grid at a time.
+/// the item lands exactly where asked even if it was never on screen.
+///
+/// A controller drives one grid at a time. While a grid is being replaced by
+/// another one with the same controller — a new key, an [AnimatedSwitcher] —
+/// both use it for a moment, and it drives the newer one.
+///
+/// A scroll of the user's own, during an [animateToIndex] or between the
+/// corrections that follow a jump, stops the controller from moving the grid
+/// any further.
 class MosaicController {
-  _SliverMosaicGridState? _state;
+  /// Creates a controller to give to a `SliverMosaicGrid` or `MosaicGrid`.
+  MosaicController();
+
+  // The grids using this controller, oldest first.
+  final List<_SliverMosaicGridState> _states = <_SliverMosaicGridState>[];
+
+  _SliverMosaicGridState? get _state => _states.isEmpty ? null : _states.last;
 
   /// Whether a grid is currently using this controller.
-  bool get isAttached => _state != null;
+  bool get isAttached => _states.isNotEmpty;
 
   void _attach(_SliverMosaicGridState state) {
-    assert(
-      _state == null || _state == state,
-      'A MosaicController can only drive one grid at a time.',
-    );
-    _state = state;
+    _states
+      ..remove(state)
+      ..add(state);
   }
 
   void _detach(_SliverMosaicGridState state) {
-    if (_state == state) {
-      _state = null;
-    }
+    _states.remove(state);
   }
 
   /// Scrolls, without animation, so item [index] is on screen.

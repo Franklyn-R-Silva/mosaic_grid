@@ -456,6 +456,123 @@ void main() {
       await pumpWidth(200); // three columns become two
       expect(rectOf(tester, anchor).top, closeTo(top, 1e-6));
     });
+
+    testWidgets('a column change deep in the list only builds what is shown', (
+      tester,
+    ) async {
+      var built = 0;
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      final mosaic = MosaicController();
+      // Taller in narrower columns, like wrapped text.
+      double extentAt(int i, double width) => 20000 / width + (i % 3) * 10;
+      Future<void> pumpWidth(double width) => tester.pumpWidget(
+        harness(
+          width: width,
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            scrollController: controller,
+            controller: mosaic,
+            columns: const MosaicColumns.minExtent(100),
+            itemCount: 1000,
+            itemBuilder: (_, i) {
+              built += 1;
+              return LayoutBuilder(
+                key: ValueKey<int>(i),
+                builder: (_, c) => SizedBox(height: extentAt(i, c.maxWidth)),
+              );
+            },
+          ),
+        ),
+      );
+      await pumpWidth(300);
+      controller.jumpTo(30000);
+      await tester.pumpAndSettle();
+      final anchor = [
+        for (var i = 0; i < 1000; i++)
+          if (isBuilt(i) && rectOf(tester, i).bottom > 0) i,
+      ].first;
+      final top = rectOf(tester, anchor).top;
+
+      built = 0;
+      await pumpWidth(250); // three columns of 100 become two of 125
+      // Hundreds of items above the view are placed from what was recorded,
+      // not built again in this frame.
+      expect(anchor, greaterThan(300));
+      expect(built, lessThan(100));
+      expect(rectOf(tester, anchor).top, closeTo(top, 1e-6));
+
+      // The items above are measured again as they come back into view.
+      final model = RowsLedger(columnCount: 2, rowGap: 0);
+      for (var i = 0; i < 1000; i++) {
+        model.add(1, extentAt(i, 125));
+      }
+      final done = mosaic.jumpToIndex(150);
+      await tester.pumpAndSettle();
+      await done;
+      expect(rectOf(tester, 150).top, closeTo(0, 0.5));
+      for (var k = 0; k < 500 && controller.offset > 0; k++) {
+        await tester.drag(find.byType(MosaicGrid), const Offset(0, 1000));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(controller.offset, 0);
+      var checked = 0;
+      for (var i = 0; i < 20; i++) {
+        if (isBuilt(i)) {
+          expect(rectOf(tester, i).top, closeTo(model.slotOffset(i), 1e-6));
+          checked += 1;
+        }
+      }
+      expect(checked, greaterThanOrEqualTo(6));
+    });
+
+    testWidgets('a new row gap deep in the list keeps every position exact', (
+      tester,
+    ) async {
+      var built = 0;
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      Future<void> pumpGap(double gap) => tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            scrollController: controller,
+            layout: const MosaicLayout.masonry(),
+            columns: const MosaicColumns.count(3),
+            rowGap: gap,
+            itemCount: 3000,
+            itemBuilder: (_, i) {
+              built += 1;
+              return box(i, varied(i));
+            },
+          ),
+        ),
+      );
+      await pumpGap(0);
+      controller.jumpTo(40000);
+      await tester.pumpAndSettle();
+
+      built = 0;
+      await pumpGap(8);
+      expect(built, lessThan(100));
+      final model = MasonryLedger(columnCount: 3, rowGap: 8);
+      for (var i = 0; i < 3000; i++) {
+        model.add(1, varied(i));
+      }
+      var checked = 0;
+      for (var i = 0; i < 3000; i++) {
+        if (isBuilt(i)) {
+          expect(
+            rectOf(tester, i).top,
+            closeTo(model.slotOffset(i) - controller.offset, 1e-6),
+            reason: 'item $i',
+          );
+          checked += 1;
+        }
+      }
+      expect(checked, greaterThan(0));
+    });
   });
 
   group('MosaicController', () {
@@ -535,6 +652,73 @@ void main() {
       final mosaic = MosaicController();
       expect(mosaic.isAttached, isFalse);
       await mosaic.jumpToIndex(3);
+    });
+
+    testWidgets('passes to the grid that replaces its own', (tester) async {
+      final mosaic = MosaicController();
+      Future<void> pumpKey(int key) => tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            key: ValueKey<int>(key),
+            padding: EdgeInsets.zero,
+            controller: mosaic,
+            itemCount: 300,
+            itemBuilder: (_, i) => box(i, 100),
+          ),
+        ),
+      );
+      await pumpKey(1);
+      // The new grid mounts before the old one is disposed.
+      await pumpKey(2);
+      expect(tester.takeException(), isNull);
+      expect(mosaic.isAttached, isTrue);
+
+      final done = mosaic.jumpToIndex(200);
+      await tester.pumpAndSettle();
+      await done;
+      expect(rectOf(tester, 200).top, closeTo(0, 0.5));
+
+      await tester.pumpWidget(const SizedBox());
+      expect(mosaic.isAttached, isFalse);
+    });
+
+    testWidgets('a drag during animateToIndex stops it', (tester) async {
+      final mosaic = MosaicController();
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            controller: mosaic,
+            scrollController: controller,
+            columns: const MosaicColumns.count(1),
+            itemCount: 200,
+            itemBuilder: (_, i) => box(i, 100),
+          ),
+        ),
+      );
+      final done = mosaic.animateToIndex(
+        150,
+        duration: const Duration(seconds: 1),
+      );
+      for (var k = 0; k < 20; k++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      final grabbedAt = controller.offset;
+      expect(grabbedAt, greaterThan(0));
+
+      final gesture = await tester.startGesture(const Offset(150, 300));
+      for (var k = 0; k < 5; k++) {
+        await gesture.moveBy(const Offset(0, 40));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+      await done;
+      // The view stays where the user took it, not at item 150.
+      expect(controller.offset, lessThan(grabbedAt));
+      expect(isBuilt(150), isFalse);
     });
   });
 
