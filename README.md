@@ -375,7 +375,9 @@ need it elsewhere in your layout.
 | `isAttached` | Whether a grid is using the controller. |
 
 Both methods complete once the item is in place, and do nothing when no grid
-is attached. A controller drives one grid at a time.
+is attached. A controller drives one grid at a time; when a grid replaces
+another with the same controller (a new `key`, an `AnimatedSwitcher`), it
+drives the new one. A drag by the user stops an `animateToIndex` in progress.
 
 `MosaicSpanCallback` is the type of `columnSpan`: `int Function(int index)`.
 
@@ -415,6 +417,14 @@ in order, so dragging the scrollbar to the end of a 100,000-item grid, or a
 grid spends at most about 12 ms per frame on it and fills the new area in as
 it goes — the app never freezes. To land on a specific item, use
 `MosaicController`, which also waits for the exact position.
+
+**Changing columns deep in a list is cheap.** When the column count, the row
+gap or the layout changes — a phone rotates, a window crosses a breakpoint —
+the grid places the items above the view from the sizes it already recorded
+instead of building them again. With new column widths those are the old
+sizes until each tile scrolls back into view and is measured again; the grid
+corrects the scroll offset as it goes, so what you are looking at does not
+move.
 
 **Horizontal grids** work the same way: columns become rows across the height,
 and tiles choose their own width.

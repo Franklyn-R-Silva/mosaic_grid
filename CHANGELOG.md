@@ -2,6 +2,30 @@
 
 <!-- Add upcoming changes under a new "## Unreleased" heading. -->
 
+## 0.1.2
+
+### Fixes
+
+- Changing the column count, the row gap or the layout no longer freezes the
+  app when the grid is scrolled far down. Every item above the view was built
+  and measured again in that one frame — close to a second for 20,000 plain
+  tiles, more with real cards — when a phone rotated or a window was resized
+  across a column breakpoint. The grid now places those items from the sizes
+  it already recorded. With new column widths, each tile above is measured
+  again as it scrolls back into view, and the view stays still while that
+  happens.
+- A grid that replaces another one with the same `MosaicController` — a new
+  `key`, an `AnimatedSwitcher` — no longer fails in debug builds with
+  "A MosaicController can only drive one grid at a time", which turned the
+  whole grid into an error widget. The new grid mounts before the old one is
+  disposed; the controller now drives the newer one.
+- A drag during `animateToIndex` stops it. The grid used to pull the view
+  back to the item as soon as the user let go.
+
+### Docs
+
+- `MosaicController` has a documented constructor.
+
 ## 0.1.1
 
 ### Fixes
