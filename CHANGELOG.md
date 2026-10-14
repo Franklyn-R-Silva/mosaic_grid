@@ -2,6 +2,25 @@
 
 <!-- Add upcoming changes under a new "## Unreleased" heading. -->
 
+## 0.1.3
+
+### Fixes
+
+- A tile shorter than its row — stretched to the row's height, the default
+  fit — that then grows no longer overflows. When a section inside it opened,
+  an image loaded or its text changed, the row kept its old height and the
+  tile was squeezed into it ("A RenderFlex overflowed by … pixels"). The row
+  now grows, as it already did when the tallest tile of the row grew.
+- In the rows layout, a tile whose `columnSpan` shrinks moves back into the
+  row before it when it fits there now. It stayed at the start of the next
+  row and left a gap: a card made wide and then narrow again never returned
+  to its place.
+
+### Docs
+
+- `MosaicController.jumpToIndex` and `animateToIndex` state that an index
+  outside the grid completes them with a `RangeError`.
+
 ## 0.1.2
 
 ### Fixes

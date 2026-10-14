@@ -375,7 +375,8 @@ need it elsewhere in your layout.
 | `isAttached` | Whether a grid is using the controller. |
 
 Both methods complete once the item is in place, and do nothing when no grid
-is attached. A controller drives one grid at a time; when a grid replaces
+is attached. An index outside the grid — any index while it is empty —
+completes them with a `RangeError`. A controller drives one grid at a time; when a grid replaces
 another with the same controller (a new `key`, an `AnimatedSwitcher`), it
 drives the new one. A drag by the user stops an `animateToIndex` in progress.
 

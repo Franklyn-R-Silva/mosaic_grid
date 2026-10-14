@@ -282,7 +282,8 @@ class MosaicController {
   /// scroll stops at the edge instead.
   ///
   /// Completes once the item is in place, or immediately when no grid is
-  /// attached.
+  /// attached. Completes with a [RangeError] when [index] is not an item of
+  /// the grid — including any index while the grid is empty.
   Future<void> jumpToIndex(int index, {double alignment = 0.0}) {
     final state = _state;
     if (state == null) {
@@ -292,7 +293,7 @@ class MosaicController {
   }
 
   /// Animates the grid so item [index] is on screen. See [jumpToIndex] for
-  /// [alignment].
+  /// [alignment] and for an [index] outside the grid.
   ///
   /// If the target was far past anything the grid had measured, the first
   /// animation may stop short of an estimate and finish with a small jump.
