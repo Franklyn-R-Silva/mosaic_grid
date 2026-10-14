@@ -96,6 +96,22 @@ void main() {
       expect(ledger.slotExtent(3), 100);
     });
 
+    test('truncate at the item that closed a row reopens that row', () {
+      final ledger = RowsLedger(columnCount: 3, rowGap: 0)
+        ..add(1, 10)
+        ..add(1, 10)
+        ..add(2, 10); // does not fit: closes the first row, a column free
+      expect(ledger.committedCount, 2);
+      ledger.truncate(2);
+      expect(ledger.measuredCount, 0);
+      ledger
+        ..add(1, 10)
+        ..add(1, 10)
+        ..add(1, 10);
+      expect(ledger.columnOf(2), 2);
+      expect(ledger.slotOffset(2), 0);
+    });
+
     test('reopenTail lets new items join a row closed by the end', () {
       final ledger = RowsLedger(columnCount: 3, rowGap: 0)
         ..add(1, 10)

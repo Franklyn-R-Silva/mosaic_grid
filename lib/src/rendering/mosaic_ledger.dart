@@ -104,7 +104,8 @@ abstract class MosaicLedger {
   void reopenTail();
 
   /// Forgets item [index] and everything after it, so they get measured and
-  /// placed again.
+  /// placed again — and, in the rows layout, the items before it whose row
+  /// depends on it. Resume measuring from [measuredCount].
   void truncate(int index);
 
   /// The range of committed items whose slots meet `[start, end]`, or null if
@@ -248,8 +249,14 @@ class RowsLedger extends MosaicLedger {
       return;
     }
     // A row is only ever kept whole: drop the row that holds [index].
-    final row = _itemRow[index];
-    final first = row < _rowFirst.length ? _rowFirst[row] : _openFirst!;
+    var row = _itemRow[index];
+    var first = row < _rowFirst.length ? _rowFirst[row] : _openFirst!;
+    if (first == index && row > 0 && _rowColumnsUsed[row - 1] < columnCount) {
+      // [index] closed the row before it by not fitting there. With another
+      // span it may fit now, so that row goes too.
+      row -= 1;
+      first = _rowFirst[row];
+    }
     _itemRow.length = first;
     _itemColumn.length = first;
     _itemSpan.length = first;

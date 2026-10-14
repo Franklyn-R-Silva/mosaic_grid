@@ -58,7 +58,7 @@ class MosaicCellConstraints extends BoxConstraints {
 /// It lays its child out with a free main axis first, so it always knows the
 /// child's natural extent — the number the grid places tiles with. When the
 /// constraints ask for more room than that, it lays the child out a second
-/// time, tight to [MosaicCellConstraints.stretchTo].
+/// time, at least [MosaicCellConstraints.stretchTo] long.
 ///
 /// Both passes only run when the cell itself has to lay out: when its child
 /// changed, or its row changed height. Scrolling never triggers them.
@@ -100,10 +100,23 @@ class RenderMosaicCell extends RenderProxyBox {
     child.layout(base, parentUsesSize: true);
     _naturalExtent = _mainExtent(child.size, axis);
     if (stretchTo != null && stretchTo > _naturalExtent) {
-      final tight = axis == Axis.vertical
-          ? base.copyWith(minHeight: stretchTo, maxHeight: stretchTo)
-          : base.copyWith(minWidth: stretchTo, maxWidth: stretchTo);
-      child.layout(tight, parentUsesSize: true);
+      // At least the row's extent rather than exactly it: a child laid out
+      // with tight constraints becomes a relayout boundary, and a stretched
+      // tile that later grows — a section that expands, an image that loads —
+      // would never reach this cell, so its row would never grow. Every child
+      // already lays out with a free main axis in the first pass, so a lower
+      // bound alone is safe for it.
+      final atLeast = axis == Axis.vertical
+          ? base.copyWith(minHeight: stretchTo)
+          : base.copyWith(minWidth: stretchTo);
+      child.layout(atLeast, parentUsesSize: true);
+      if (_mainExtent(child.size, axis) > stretchTo + precisionErrorTolerance) {
+        // It took the extra room and then some: hold it to the row.
+        final tight = axis == Axis.vertical
+            ? base.copyWith(minHeight: stretchTo, maxHeight: stretchTo)
+            : base.copyWith(minWidth: stretchTo, maxWidth: stretchTo);
+        child.layout(tight, parentUsesSize: true);
+      }
     }
     size = base.constrain(child.size);
   }

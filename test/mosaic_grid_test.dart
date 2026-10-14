@@ -197,6 +197,75 @@ void main() {
       expect(rectOf(tester, 3).top, 40);
     });
 
+    testWidgets('a stretched tile that grows makes its row grow', (
+      tester,
+    ) async {
+      // Tile 0 is shorter than its row, so it is stretched; then a section
+      // inside it opens, without the grid itself rebuilding.
+      final open = ValueNotifier<bool>(false);
+      addTearDown(open.dispose);
+      await tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            columns: const MosaicColumns.count(2),
+            rowGap: 10,
+            itemCount: 4,
+            itemBuilder: (_, i) => i == 0
+                ? Column(
+                    key: const ValueKey<int>(0),
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(height: 30),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: open,
+                        builder: (_, value, __) =>
+                            SizedBox(height: value ? 150 : 0),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  )
+                : box(i, 100),
+          ),
+        ),
+      );
+      expect(rectOf(tester, 0).height, 100);
+
+      open.value = true;
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(rectOf(tester, 0).height, 200);
+      expect(rectOf(tester, 1).height, 200);
+      expect(rectOf(tester, 2).top, 210);
+
+      open.value = false;
+      await tester.pump();
+      expect(rectOf(tester, 0).height, 100);
+      expect(rectOf(tester, 2).top, 110);
+    });
+
+    testWidgets('a tile made narrower moves back into the row it left', (
+      tester,
+    ) async {
+      Future<void> pumpWide(int? wide) => tester.pumpWidget(
+        harness(
+          MosaicGrid.builder(
+            padding: EdgeInsets.zero,
+            columns: const MosaicColumns.count(3),
+            columnSpan: (i) => i == wide ? 2 : 1,
+            itemCount: 6,
+            itemBuilder: (_, i) => box(i, 10),
+          ),
+        ),
+      );
+      await pumpWide(null);
+      await pumpWide(2);
+      expect(rectOf(tester, 2), const Rect.fromLTWH(0, 10, 200, 10));
+      await pumpWide(null);
+      expect(rectOf(tester, 2), const Rect.fromLTWH(200, 0, 100, 10));
+      expect(rectOf(tester, 3), const Rect.fromLTWH(0, 10, 100, 10));
+    });
+
     testWidgets('items added later join the last row', (tester) async {
       Future<void> pumpCount(int count) => tester.pumpWidget(
         harness(
