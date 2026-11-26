@@ -178,7 +178,7 @@ void main() {
             itemBuilder: (_, i) => i == 1
                 ? ValueListenableBuilder<bool>(
                     valueListenable: tall,
-                    builder: (_, value, __) => box(i, value ? 120 : 30),
+                    builder: (_, value, _) => box(i, value ? 120 : 30),
                   )
                 : box(i, 30),
           ),
@@ -219,7 +219,7 @@ void main() {
                       const SizedBox(height: 30),
                       ValueListenableBuilder<bool>(
                         valueListenable: open,
-                        builder: (_, value, __) =>
+                        builder: (_, value, _) =>
                             SizedBox(height: value ? 150 : 0),
                       ),
                       const SizedBox(height: 20),
@@ -480,7 +480,7 @@ void main() {
             itemBuilder: (_, i) => i == 9
                 ? ValueListenableBuilder<double>(
                     valueListenable: grow,
-                    builder: (_, extent, __) => box(i, extent),
+                    builder: (_, extent, _) => box(i, extent),
                   )
                 : box(i, 100),
           ),
