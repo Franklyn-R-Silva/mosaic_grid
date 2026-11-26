@@ -2,6 +2,26 @@
 
 <!-- Add upcoming changes under a new "## Unreleased" heading. -->
 
+## 0.1.4
+
+No changes to the package code: this release brings the new README to
+pub.dev.
+
+### Docs
+
+- A live demo runs at https://franklyn-r-silva.github.io/mosaic_grid/, linked
+  from the top of the README.
+- New contributor docs: how to build, test and send a change, how to report a
+  vulnerability, and issue and pull request templates.
+
+### Maintenance
+
+- Releases are now published to pub.dev by GitHub Actions when a version tag
+  is pushed, with the GitHub Release notes taken from this changelog.
+- The example silences the deprecation of `package:flutter/material.dart`
+  (deprecated since Flutter 3.47), because it still supports Flutter 3.32.
+  The package itself does not import Material.
+
 ## 0.1.3
 
 ### Fixes

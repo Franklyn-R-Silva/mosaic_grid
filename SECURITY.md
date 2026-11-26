@@ -22,7 +22,7 @@ Actions workflows, the live demo) — please report it privately.
 [private vulnerability reporting](https://github.com/Franklyn-R-Silva/mosaic_grid/security/advisories/new)
 ("Report a vulnerability" under the Security tab).
 
-**Alternative:** Email the maintainer at franklyn1998@gmail.com with:
+**Alternative:** Email the maintainer at franklyn.dev.mobile@gmail.com with:
 
 - A description of the vulnerability and its impact
 - Steps to reproduce (a minimal sample is ideal)
