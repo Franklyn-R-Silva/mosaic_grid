@@ -194,10 +194,13 @@ both up to date. A tag can be moved to point at other code; a SHA cannot.
    ```
 
    [`release.yaml`](.github/workflows/release.yaml) checks that the tag
-   matches `pubspec.yaml`, runs analyze and the suite, and creates the GitHub
-   Release from the CHANGELOG section plus the merged PRs, grouped by label
+   matches `pubspec.yaml`, runs analyze and the suite, publishes to pub.dev
+   (automated publishing through the `pub.dev` environment, no secret
+   involved), and then creates the GitHub Release from the CHANGELOG section
+   plus the merged PRs, grouped by label
    ([`.github/release.yml`](.github/release.yml)).
-4. Publish to pub.dev from a clean checkout of the tag: `flutter pub publish`.
+4. Do not run `flutter pub publish` by hand: the tag does it, and a version
+   already on pub.dev makes the workflow fail.
 
 ### Dependency updates
 

@@ -47,9 +47,39 @@ jobs:
             exit 1
           fi
 
+  publish:
+    name: publish
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # pub.dev only accepts an OIDC token from this repo, for a v{{version}} tag,
+    # from this environment (Settings > Environments restricts it to v* tags).
+    environment: pub.dev
+    permissions:
+      contents: read
+      id-token: write # the OIDC token pub.dev trades for a one-off credential
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Only here for its OIDC step: it registers the pub.dev token in the pub
+      # config that Flutter's pub reads too.
+      - uses: dart-lang/setup-dart@2286a0c042b44434fe26d292bbce8d34f7ec662b # v1.8.2
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Publish to pub.dev
+        run: flutter pub publish --force
+
   release:
     name: release
-    needs: verify
+    needs: publish
     runs-on: ubuntu-latest
     timeout-minutes: 5
     # The only job that can write, and it runs no package code: it reads the
