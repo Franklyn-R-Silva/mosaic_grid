@@ -2,6 +2,7 @@ name: 🐛 Bug report
 description: A tile in the wrong place, a jump, an overflow, a crash
 title: "[Bug]: "
 labels: ["bug"]
+assignees: ["Franklyn-R-Silva"]
 body:
   - type: markdown
     attributes:
