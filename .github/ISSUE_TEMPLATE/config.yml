@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Question or discussion
-    url: https://github.com/Franklyn-R-Silva/mosaic_grid/discussions
-    about: Ask questions and discuss ideas with the community.
+  - name: 💬 Ask a question
+    url: https://github.com/Franklyn-R-Silva/mosaic_grid/discussions/categories/q-a
+    about: How do I…? Is this a bug? Which layout or columns do I need? Ask here.
+  - name: 🙌 Show what you built
+    url: https://github.com/Franklyn-R-Silva/mosaic_grid/discussions/categories/show-and-tell
+    about: A screenshot of your grid, a layout recipe. It helps the next person.
