@@ -1,0 +1,23 @@
+name: ✨ Feature request
+description: Suggest an idea or improvement for mosaic_grid
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What layout are you trying to build that mosaic_grid doesn't support? A problem without a solution is a fine request.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Optional. A new parameter, a new layout, a different default? Say if you'd like to send the PR yourself.
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: Optional. How you'd like to write it, or a sketch or screenshot of the layout.
+      render: dart

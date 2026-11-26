@@ -1,13 +1,26 @@
 # mosaic_grid
 
 [![pub package](https://img.shields.io/pub/v/mosaic_grid.svg)](https://pub.dev/packages/mosaic_grid)
+[![pub points](https://img.shields.io/pub/points/mosaic_grid?label=pub%20points&color=brightgreen)](https://pub.dev/packages/mosaic_grid/score)
+[![likes](https://img.shields.io/pub/likes/mosaic_grid)](https://pub.dev/packages/mosaic_grid/score)
 [![CI](https://github.com/Franklyn-R-Silva/mosaic_grid/actions/workflows/ci.yaml/badge.svg)](https://github.com/Franklyn-R-Silva/mosaic_grid/actions/workflows/ci.yaml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Franklyn-R-Silva/mosaic_grid/badge)](https://scorecard.dev/viewer/?uri=github.com/Franklyn-R-Silva/mosaic_grid)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-android%20%7C%20ios%20%7C%20web%20%7C%20windows%20%7C%20macos%20%7C%20linux-4F46E5)
 
 **Lazy Flutter grids whose tiles size themselves.** Aligned rows that grow to
 their tallest card, masonry columns, tiles that span several columns, paging
 and jump-to-item — in one widget, with no dependencies beyond Flutter.
+
+<p align="center">
+  <a href="https://franklyn-r-silva.github.io/mosaic_grid/"><img
+    src="https://img.shields.io/badge/Try_the_live_demo-4F46E5?style=for-the-badge&logo=flutter&logoColor=white"
+    alt="Try the live demo"
+  /></a>
+  <br />
+  The example app in your browser: a paged catalog, a masonry board and a
+  playground with every option. Resize the window and watch the columns.
+</p>
 
 <p align="center">
   <img
@@ -65,6 +78,7 @@ There is nothing to tune and nothing to cut off.
 
 ## Contents
 
+- [When to use it](#when-to-use-it)
 - [Install](#install)
 - [Quick start](#quick-start)
 - [Layouts](#layouts) — [rows](#rows) · [masonry](#masonry) · [spanning tiles](#spanning-tiles)
@@ -76,7 +90,24 @@ There is nothing to tune and nothing to cut off.
 - [Tips](#tips)
 - [How it works](#how-it-works)
 - [Example app](#example-app)
+- [FAQ](#faq)
 - [Contributing](#contributing)
+
+## When to use it
+
+`GridView` and `SliverGrid` are part of Flutter and are the right tool when
+every tile has the same size. Reach for `mosaic_grid` when they do not:
+
+| Your tiles | Use |
+| --- | --- |
+| All one size or ratio — thumbnails, icons, image tiles | `GridView` / `SliverGrid`: each position is arithmetic, nothing is measured |
+| Cards whose height depends on their content — text, badges, a larger system font | `MosaicGrid`, [rows](#rows): each row grows to its tallest card |
+| Different heights, Pinterest-style | `MosaicGrid`, [masonry](#masonry) |
+| Some wider than others — featured items, banners | `MosaicGrid` with [`columnSpan`](#spanning-tiles); Flutter's built-in grid delegates give every tile one cell |
+
+The price of content-sized tiles: positions come from measuring items in
+order, so a jump far past anything measured fills in over a few frames (see
+[Tips](#tips)). `MosaicController` waits for the exact position for you.
 
 ## Install
 
@@ -478,16 +509,34 @@ flutter run
 Every image in this README is rendered from the example app by a script, so
 they always match the code — see [tool/build_media.py](tool/build_media.py).
 
+## FAQ
+
+**Does it add any dependency?** No. It depends on the Flutter SDK only.
+
+**Which Flutter versions does it support?** Flutter 3.32 and newer. CI runs
+the test suite on 3.32.0, on the current stable and on beta.
+
+**Why does `Expanded` or `Spacer` in a tile throw?** Each tile is first
+measured with an unbounded height, and a flex child along the scroll axis
+cannot be measured that way. Use `MainAxisAlignment.spaceBetween` — see
+[Tips](#tips).
+
+**Can I put it in a `CustomScrollView` with a `SliverAppBar`?** Yes, with
+[`SliverMosaicGrid`](#inside-a-customscrollview). `MosaicController` works
+there too.
+
+**Do tiles keep their state when the list is filtered or reordered?** Give
+each tile a key and pass `findItemIndexCallback`; see [Tips](#tips).
+
 ## Contributing
 
-Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
-Before sending a change:
-
-```bash
-dart format .
-flutter analyze
-flutter test
-```
+Issues, questions and pull requests are welcome, and none of them has to be
+perfect. [CONTRIBUTING.md](CONTRIBUTING.md) gets you from clone to a passing
+test run in five minutes; issues labelled
+[`good first issue`](https://github.com/Franklyn-R-Silva/mosaic_grid/labels/good%20first%20issue)
+are a good place to start, and
+[Discussions](https://github.com/Franklyn-R-Silva/mosaic_grid/discussions) is
+the place for questions and for showing what you built.
 
 ## License
 

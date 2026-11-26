@@ -1,0 +1,30 @@
+# mosaic_grid
+
+> A Flutter package of lazy grids whose tiles size themselves: aligned rows that grow to their tallest tile, masonry columns, tiles that span several columns, paging (header, footer, `onEndReached`) and jump-to-item (`MosaicController`). No aspect ratio and no fixed extent to tune, no `IntrinsicHeight`, no dependencies beyond Flutter. Flutter 3.32 or later, all six platforms, vertical or horizontal, right-to-left.
+
+Install with `flutter pub add mosaic_grid` and `import 'package:mosaic_grid/mosaic_grid.dart';`. The pieces:
+
+- `MosaicGrid.builder(itemCount:, itemBuilder:, columns:, layout:, columnGap:, rowGap:)`: the scroll view, with `header`, `footer`, `onEndReached`, `endReachedKey`
+- `SliverMosaicGrid.builder(...)`: the same grid as a sliver, for a `CustomScrollView`
+- `MosaicColumns.count(n)`, `.minExtent(e, maxCount: m)`, `.maxExtent(e)`: the column count, resolved from the grid's own cross-axis extent, not the screen
+- `MosaicLayout.rows(fit: MosaicRowFit.stretch | start | center | end)` (the default) and `MosaicLayout.masonry()`
+- `columnSpan: (i) => ...`: columns per item, decided from the data before the tile is built; spans larger than the column count take the whole row
+- `MosaicController().jumpToIndex(i)` / `animateToIndex(i, duration:)`: exact even for items never built
+
+Tiles are measured with an unbounded main-axis extent first, so `Expanded` and `Spacer` along the scroll axis do not work inside a tile; use `MainAxisAlignment.spaceBetween` to pin content to the bottom of a stretched card.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/Franklyn-R-Silva/mosaic_grid/main/README.md): The tour: layouts, columns, paging, jump-to-item, slivers, full parameter tables, tips, how it works, FAQ
+- [Example app](https://raw.githubusercontent.com/Franklyn-R-Silva/mosaic_grid/main/example/lib/main.dart): The gallery: a paged catalog in aligned rows, a masonry board, a playground with every option
+- [Live demo](https://franklyn-r-silva.github.io/mosaic_grid/): The example app running in the browser
+
+## Package
+
+- [pub.dev](https://pub.dev/packages/mosaic_grid): Versions, install instructions, score
+- [API reference](https://pub.dev/documentation/mosaic_grid/latest/): Generated dartdoc
+
+## Optional
+
+- [Changelog](https://raw.githubusercontent.com/Franklyn-R-Silva/mosaic_grid/main/CHANGELOG.md): Every release
+- [Contributing](https://raw.githubusercontent.com/Franklyn-R-Silva/mosaic_grid/main/CONTRIBUTING.md): Setup, tests, code layout, what CI checks

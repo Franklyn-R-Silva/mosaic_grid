@@ -1,0 +1,16 @@
+# Groups the auto-generated part of each GitHub Release by the PR's label.
+# A PR with several labels lands in the first category that matches.
+changelog:
+  categories:
+    - title: Breaking changes
+      labels: ["breaking change"]
+    - title: New features
+      labels: ["enhancement"]
+    - title: Fixes
+      labels: ["bug"]
+    - title: Documentation
+      labels: ["documentation"]
+    - title: Dependencies
+      labels: ["dependencies"]
+    - title: Other changes
+      labels: ["*"]

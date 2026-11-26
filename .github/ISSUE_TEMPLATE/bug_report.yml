@@ -1,0 +1,43 @@
+name: 🐛 Bug report
+description: A tile in the wrong place, a jump, an overflow, a crash
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Only the first box is required — a short report
+        is better than none, and follow-up questions are fine.
+        Not sure it is a bug? Ask in [Discussions](https://github.com/Franklyn-R-Silva/mosaic_grid/discussions/categories/q-a).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What the grid did, and what you expected instead. A screenshot or screen recording helps a lot for layout bugs.
+      placeholder: After loading the second page, the first row of the new page overlaps ...
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Minimal sample
+      description: The smallest widget that shows it — a `MosaicGrid.builder` with `SizedBox` or `Container` tiles is ideal. This is what makes a fix fast.
+      render: dart
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: "`mosaic_grid` version and `flutter --version`, if you have them handy."
+      placeholder: "mosaic_grid 0.1.3, Flutter 3.32.0"
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Web
+        - Windows
+        - macOS
+        - Linux

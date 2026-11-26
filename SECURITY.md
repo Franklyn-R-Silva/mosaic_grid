@@ -1,29 +1,41 @@
 # Security Policy
 
-## Supported versions
+## Supported Versions
 
-The latest published version on [pub.dev](https://pub.dev/packages/mosaic_grid)
-receives security fixes.
+Security fixes are applied to the latest published release on
+[pub.dev](https://pub.dev/packages/mosaic_grid). Please upgrade to the most
+recent version before reporting an issue.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+| Version | Supported |
+|---------|-----------|
+| Latest release | ✅ |
+| Older releases | ❌ |
 
-## Reporting a vulnerability
+## Reporting a Vulnerability
 
-Please **do not** open a public issue for security vulnerabilities.
+`mosaic_grid` is a layout widget with no dependencies beyond Flutter: it does
+not touch the network, files or storage. If you still find a vulnerability —
+in the package, or in how this repository builds and publishes it (the GitHub
+Actions workflows, the live demo) — please report it privately.
 
-Instead, report it privately using GitHub's
-[**Report a vulnerability**](https://github.com/Franklyn-R-Silva/mosaic_grid/security/advisories/new)
-feature (Security → Advisories), or contact the maintainer at
-**INSERT_CONTACT_METHOD**.
+**Preferred:** Use GitHub's
+[private vulnerability reporting](https://github.com/Franklyn-R-Silva/mosaic_grid/security/advisories/new)
+("Report a vulnerability" under the Security tab).
 
-Please include:
+**Alternative:** Email the maintainer at franklyn1998@gmail.com with:
 
-- A description of the vulnerability and its impact.
-- Steps to reproduce or a proof of concept.
-- Any suggested fix, if you have one.
+- A description of the vulnerability and its impact
+- Steps to reproduce (a minimal sample is ideal)
+- The `mosaic_grid` and Flutter versions affected
 
-You can expect an initial response within a few days. Once the issue is
-confirmed and fixed, a new version will be released and credit given to the
-reporter (unless you prefer to stay anonymous).
+Please do not open a public issue for a vulnerability.
+
+## Response Expectations
+
+- **Acknowledgement:** within 5 business days
+- **Assessment & fix timeline:** communicated after triage
+- **Disclosure:** coordinated — please give us a reasonable window to release a
+  fix before any public disclosure. Reporters are credited unless they prefer
+  to stay anonymous.
+
+Thank you for helping keep the Flutter community safe.

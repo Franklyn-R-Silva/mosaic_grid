@@ -1,0 +1,59 @@
+name: pages
+
+# The example app, built for the web and served as the live demo at
+# https://franklyn-r-silva.github.io/mosaic_grid/. A PR only builds it, which
+# is what catches an example that no longer compiles; main also deploys it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# PR runs cancel each other. On main a deploy in progress is never cancelled;
+# a newer push waits and then publishes the latest main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      # Pages serves the site from /mosaic_grid/, not from the root.
+      - name: Build the example for the web
+        working-directory: example
+        run: flutter build web --release --base-href /mosaic_grid/
+
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: example/build/web
+
+  deploy:
+    name: deploy demo
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write # publish the artifact to GitHub Pages
+      id-token: write # prove to Pages that the artifact comes from this run
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
