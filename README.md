@@ -5,6 +5,7 @@
 [![likes](https://img.shields.io/pub/likes/mosaic_grid)](https://pub.dev/packages/mosaic_grid/score)
 [![CI](https://github.com/Franklyn-R-Silva/mosaic_grid/actions/workflows/ci.yaml/badge.svg)](https://github.com/Franklyn-R-Silva/mosaic_grid/actions/workflows/ci.yaml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Franklyn-R-Silva/mosaic_grid/badge)](https://scorecard.dev/viewer/?uri=github.com/Franklyn-R-Silva/mosaic_grid)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/17140/badge)](https://www.bestpractices.dev/projects/17140)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-android%20%7C%20ios%20%7C%20web%20%7C%20windows%20%7C%20macos%20%7C%20linux-4F46E5)
 
