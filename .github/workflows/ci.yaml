@@ -6,22 +6,31 @@ on:
   pull_request:
     branches: [main]
 
-jobs:
-  analyze-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+# Nothing here writes to the repository; a job that ever needs to asks for it.
+permissions:
+  contents: read
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+# A new push to a PR makes the run in progress obsolete. Runs on main are never
+# cancelled, so every merge keeps a complete result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           cache: true
 
-      - name: Print versions
-        run: flutter --version
-
+      # Also resolves example/, so the analyzer below covers the example app
+      # and example/tool/capture_media_test.dart, which no job runs.
       - name: Install dependencies
         run: flutter pub get
 
@@ -29,11 +38,10 @@ jobs:
         run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --fatal-infos
 
-      - name: Run tests
-        run: flutter test
-
+      # Catches packaging problems — a missing screenshot, a bad pubspec, an
+      # oversized archive — on the PR instead of at release time.
       - name: Publish dry-run
         # `pub publish --dry-run` exits non-zero on *any* warning, including a
         # dirty working tree — which says nothing about the package. Show the
@@ -43,3 +51,93 @@ jobs:
         run: |
           git --no-pager diff
           flutter pub publish --dry-run
+
+  test:
+    name: test (${{ matrix.channel }})
+    runs-on: ubuntu-latest
+    # A hung widget test would otherwise hold the runner for GitHub's six-hour
+    # default.
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # beta shows a framework change that breaks the grid weeks before it
+        # reaches stable and the users.
+        channel: [stable, beta]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: ${{ matrix.channel }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Only test/; the media script in example/tool/ renders frames to disk
+      # for the README and is run by hand.
+      - name: Run tests
+        run: flutter test
+
+  min-flutter:
+    name: min Flutter (3.32.0)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.32.0
+          cache: true
+
+      # pubspec.yaml promises `flutter: ">=3.32.0"`, and the jobs above only
+      # ever saw the newest SDK. An API newer than 3.32 is a compile error here.
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Infos are `check`'s job: lint wording shifts between SDKs. Errors and
+      # warnings still fail.
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
+
+  pana:
+    name: pana
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      # pub.dev scores every upload with pana, and a lost point is only seen
+      # after the version is published for good. It checks what the jobs above
+      # do not: dartdoc coverage of the public API, that the lower bounds of the
+      # dependency constraints still resolve and analyze, and platform support.
+      # Unpinned on purpose: pub.dev always scores with the latest pana.
+      # Threshold 0 = fail on any point below the maximum (160/160 today).
+      # pana converts the pubspec `screenshots:` to WebP; without these tools
+      # it scores the example/screenshots section 0/10.
+      - name: Score the package as pub.dev will
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq webp
+          dart pub global activate pana
+          dart pub global run pana --exit-code-threshold 0
+
+  dependency-review:
+    name: dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Dependabot alerts only fire once a vulnerable version is on main; this
+      # stops a PR from bringing one in (a pub package or an action).
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
